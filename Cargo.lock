@@ -2486,6 +2486,7 @@ dependencies = [
  "http 1.0.0",
  "http-serde",
  "log",
+ "schemars",
  "serde",
  "serde_json",
  "serial_test",
