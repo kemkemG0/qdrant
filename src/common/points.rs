@@ -22,6 +22,7 @@ use collection::operations::vector_ops::{
 };
 use collection::operations::{CollectionUpdateOperations, CreateIndex, FieldIndexOperations};
 use collection::shards::shard::ShardId;
+use issues::Issue;
 use schemars::JsonSchema;
 use segment::types::{PayloadFieldSchema, PayloadKeyType, ScoredPoint};
 use serde::{Deserialize, Serialize};
@@ -536,8 +537,8 @@ pub async fn do_create_index_internal(
 ) -> Result<UpdateResult, StorageError> {
     let collection_operation = CollectionUpdateOperations::FieldIndexOperation(
         FieldIndexOperations::CreateIndex(CreateIndex {
-            field_name,
-            field_schema,
+            field_name: field_name.clone(),
+            field_schema: field_schema,
         }),
     );
 
@@ -547,14 +548,25 @@ pub async fn do_create_index_internal(
         ShardSelectorInternal::All
     };
 
-    toc.update(
-        collection_name,
-        collection_operation,
-        wait,
-        ordering,
-        shard_selector,
-    )
-    .await
+    let res = toc
+        .update(
+            collection_name,
+            collection_operation,
+            wait,
+            ordering,
+            shard_selector,
+        )
+        .await;
+
+    if res.is_ok() {
+        // We can deactivate issues related to this missing index
+        let code = segment::problems::UnindexedField::get_code(collection_name, &field_name);
+        issues::solve(code);
+        
+        dbg!(issues::all_issues());
+    }
+
+    res
 }
 
 pub async fn do_create_index(
