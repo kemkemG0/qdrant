@@ -61,12 +61,14 @@ validator = { version = "0.16", features = ["derive"] }
 chrono = { version = "0.4.33", features = ["serde"] }
 smol_str = "0.2.1"
 lazy_static = "1.4"
+http = "1.0.0"
 
 sysinfo = "0.30"
 charabia = { version = "0.8.5", default-features = false, features = ["greek", "hebrew", "thai"] }
 
 common = { path = "../common/common" }
 io = { path = "../common/io" }
+issues = { path = "../common/issues" }
 memory = { path = "../common/memory" }
 sparse = { path = "../sparse" }
 
