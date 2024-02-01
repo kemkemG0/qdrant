@@ -1,3 +1,6 @@
+mod clock_map;
+mod shard_ops;
+
 use std::collections::{BTreeSet, HashMap};
 use std::mem::size_of;
 use std::ops::Deref;
@@ -28,6 +31,7 @@ use tokio::sync::mpsc::Sender;
 use tokio::sync::{mpsc, oneshot, Mutex, RwLock as TokioRwLock};
 use wal::{Wal, WalOptions};
 
+use self::clock_map::ClockMap;
 use super::update_tracker::UpdateTracker;
 use crate::collection_manager::collection_updater::CollectionUpdater;
 use crate::collection_manager::holders::segment_holder::{LockedSegment, SegmentHolder};
@@ -69,6 +73,7 @@ pub struct LocalShard {
     pub(super) path: PathBuf,
     pub(super) optimizers: Arc<Vec<Arc<Optimizer>>>,
     pub(super) optimizers_log: Arc<ParkingMutex<TrackerLog>>,
+    clock_map: Mutex<ClockMap>,
     update_runtime: Handle,
 }
 
@@ -156,6 +161,7 @@ impl LocalShard {
             update_sender: ArcSwap::from_pointee(update_sender),
             update_tracker,
             path: shard_path.to_owned(),
+            clock_map: Default::default(),
             update_runtime,
             optimizers,
             optimizers_log,
