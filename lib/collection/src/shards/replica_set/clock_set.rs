@@ -12,20 +12,21 @@ impl ClockSet {
         Self::default()
     }
 
-    /// Get the first available clock from this set.
+    /// Get the first available clock from this set, or create a new one.
     pub fn get_clock(&mut self) -> ClockGuard {
-        for (id, clock) in self.clocks.iter().enumerate() {
-            if clock.lock() {
-                return ClockGuard::new(id, clock.clone());
-            }
-        }
+        self.clocks
+            .iter()
+            .enumerate()
+            .find_map(|(id, clock)| clock.try_lock(id))
+            .unwrap_or_else(|| self.new_clock())
+    }
 
+    /// Create a new clock, lock it, and return a guard.
+    fn new_clock(&mut self) -> ClockGuard {
         let id = self.clocks.len();
-        let clock = Arc::new(Clock::new_locked());
-
+        let clock = Arc::new(Clock::new_unlocked());
         self.clocks.push(clock.clone());
-
-        ClockGuard::new(id, clock)
+        clock.try_lock(id).unwrap()
     }
 }
 
@@ -44,19 +45,13 @@ impl ClockGuard {
         self.id
     }
 
+    #[must_use = "new clock value must be used"]
     pub fn tick_once(&mut self) -> u64 {
         self.clock.tick_once()
     }
 
     pub fn advance_to(&mut self, new_tick: u64) -> u64 {
         self.clock.advance_to(new_tick)
-    }
-
-    pub fn release(self) {
-        // Do not call `self.clock.release()` here!
-        //
-        // `Drop` trait will automatically trigger `self.clock.release()`, when `self` goes out of
-        // scope at the end of the method.
     }
 }
 
@@ -73,10 +68,10 @@ struct Clock {
 }
 
 impl Clock {
-    pub fn new_locked() -> Self {
+    pub fn new_unlocked() -> Self {
         Self {
             clock: AtomicU64::new(0),
-            available: AtomicBool::new(false),
+            available: AtomicBool::new(true),
         }
     }
 
@@ -89,11 +84,17 @@ impl Clock {
         cmp::max(current_tick, new_tick)
     }
 
-    pub fn lock(&self) -> bool {
-        self.available.swap(false, Ordering::Relaxed)
+    /// Lock this clock, returning a guard.
+    ///
+    /// Returns `None` if this clock is unavailable.
+    fn try_lock(self: &Arc<Self>, id: usize) -> Option<ClockGuard> {
+        self.available
+            .swap(false, Ordering::Relaxed)
+            .then(|| ClockGuard::new(id, self.clone()))
     }
 
-    pub fn release(&self) {
+    /// Release this clock. Should never be invoked manually.
+    fn release(&self) {
         self.available.store(true, Ordering::Relaxed);
     }
 }
