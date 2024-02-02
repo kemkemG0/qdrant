@@ -6,7 +6,7 @@ use crate::collection::Collection;
 use crate::config::ShardingMethod;
 use crate::operations::types::CollectionError;
 use crate::operations::{
-    CollectionUpdateOperations, CreateIndex, FieldIndexOperations, WithClockTag,
+    CollectionUpdateOperations, CreateIndex, FieldIndexOperations, OperationWithClockTag,
 };
 use crate::shards::replica_set::{ReplicaState, ShardReplicaSet};
 use crate::shards::shard::{PeerId, ShardId, ShardsPlacement};
@@ -112,7 +112,7 @@ impl Collection {
                 );
 
                 replica_set
-                    .update_local(create_index_op.without_clock_tag(), true) // TODO: Assign clock tag!? 🤔
+                    .update_local(OperationWithClockTag::from(create_index_op), true) // TODO: Assign clock tag!? 🤔
                     .await?;
             }
 

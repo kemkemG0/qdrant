@@ -11,7 +11,7 @@ use crate::operations::consistency_params::ReadConsistency;
 use crate::operations::point_ops::WriteOrdering;
 use crate::operations::shard_selector_internal::ShardSelectorInternal;
 use crate::operations::types::*;
-use crate::operations::{CollectionUpdateOperations, OperationWithClockTag, WithClockTag};
+use crate::operations::{CollectionUpdateOperations, OperationWithClockTag};
 use crate::shards::shard::ShardId;
 
 impl Collection {
@@ -46,7 +46,7 @@ impl Collection {
                     //
                     // We update *all* shards with a single operation, but each shard has it's own clock,
                     // so it's *impossible* to assign any single clock tag to this operation.
-                    shard.update_local(operation.clone().without_clock_tag(), wait)
+                    shard.update_local(OperationWithClockTag::from(operation.clone()), wait)
                 })
                 .collect();
 

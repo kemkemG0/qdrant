@@ -22,7 +22,7 @@ use collection::operations::vector_ops::{
     DeleteVectors, UpdateVectors, UpdateVectorsOp, VectorOperations,
 };
 use collection::operations::{
-    ClockTag, CollectionUpdateOperations, CreateIndex, FieldIndexOperations, WithClockTag,
+    ClockTag, CollectionUpdateOperations, CreateIndex, FieldIndexOperations, OperationWithClockTag,
 };
 use collection::shards::shard::ShardId;
 use schemars::JsonSchema;
@@ -173,7 +173,7 @@ pub async fn do_upsert_points(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -203,7 +203,7 @@ pub async fn do_delete_points(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -230,7 +230,7 @@ pub async fn do_update_vectors(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -270,7 +270,7 @@ pub async fn do_delete_vectors(
         result = Some(
             toc.update(
                 &collection_name,
-                collection_operation.with_clock_tag_opt(clock_tag),
+                OperationWithClockTag::new(collection_operation, clock_tag),
                 wait,
                 ordering,
                 shard_selector.clone(),
@@ -285,7 +285,7 @@ pub async fn do_delete_vectors(
         result = Some(
             toc.update(
                 &collection_name,
-                collection_operation.with_clock_tag_opt(clock_tag),
+                OperationWithClockTag::new(collection_operation, clock_tag),
                 wait,
                 ordering,
                 shard_selector,
@@ -324,7 +324,7 @@ pub async fn do_set_payload(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -359,7 +359,7 @@ pub async fn do_overwrite_payload(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -394,7 +394,7 @@ pub async fn do_delete_payload(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -426,7 +426,7 @@ pub async fn do_clear_payload(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -574,7 +574,7 @@ pub async fn do_create_index_internal(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,
@@ -651,7 +651,7 @@ pub async fn do_delete_index_internal(
 
     toc.update(
         &collection_name,
-        collection_operation.with_clock_tag_opt(clock_tag),
+        OperationWithClockTag::new(collection_operation, clock_tag),
         wait,
         ordering,
         shard_selector,

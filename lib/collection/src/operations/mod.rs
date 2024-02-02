@@ -59,26 +59,9 @@ impl OperationWithClockTag {
     }
 }
 
-pub trait WithClockTag {
-    fn with_clock_tag(self, clock_tag: ClockTag) -> OperationWithClockTag;
-    fn with_clock_tag_opt(self, clock_tag: Option<ClockTag>) -> OperationWithClockTag;
-    fn without_clock_tag(self) -> OperationWithClockTag;
-}
-
-impl<O> WithClockTag for O
-where
-    O: Into<CollectionUpdateOperations>,
-{
-    fn with_clock_tag(self, clock_tag: ClockTag) -> OperationWithClockTag {
-        self.with_clock_tag_opt(Some(clock_tag))
-    }
-
-    fn with_clock_tag_opt(self, clock_tag: Option<ClockTag>) -> OperationWithClockTag {
-        OperationWithClockTag::new(self.into(), clock_tag)
-    }
-
-    fn without_clock_tag(self) -> OperationWithClockTag {
-        self.with_clock_tag_opt(None)
+impl From<CollectionUpdateOperations> for OperationWithClockTag {
+    fn from(operation: CollectionUpdateOperations) -> Self {
+        Self::new(operation, None)
     }
 }
 
@@ -304,7 +287,7 @@ mod tests {
 
         fn arbitrary_with(_: Self::Parameters) -> Self::Strategy {
             any::<(CollectionUpdateOperations, Option<ClockTag>)>()
-                .prop_map(|(operation, clock_tag)| operation.with_clock_tag_opt(clock_tag))
+                .prop_map(|(operation, clock_tag)| Self::new(operation, clock_tag))
                 .boxed()
         }
     }

@@ -9,7 +9,7 @@ use collection::operations::point_ops::{
     PointInsertOperationsInternal, PointOperations, PointStruct,
 };
 use collection::operations::types::{CoreSearchRequestBatch, SearchRequestInternal, VectorParams};
-use collection::operations::{CollectionUpdateOperations, WithClockTag};
+use collection::operations::CollectionUpdateOperations;
 use collection::optimizers_builder::OptimizersConfig;
 use collection::shards::local_shard::LocalShard;
 use collection::shards::shard_trait::ShardOperation;
@@ -105,7 +105,7 @@ fn batch_search_bench(c: &mut Criterion) {
     let rnd_batch = create_rnd_batch();
 
     handle
-        .block_on(shard.update(rnd_batch.without_clock_tag(), true))
+        .block_on(shard.update(rnd_batch.into(), true))
         .unwrap();
 
     let mut group = c.benchmark_group("batch-search-bench");
