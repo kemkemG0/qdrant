@@ -12,21 +12,20 @@ impl ClockSet {
         Self::default()
     }
 
-    /// Get the first available clock from this set, or create a new one.
+    /// Get the first available clock from the set, or create a new one.
     pub fn get_clock(&mut self) -> ClockGuard {
-        self.clocks
-            .iter()
-            .enumerate()
-            .find_map(|(id, clock)| clock.try_lock(id))
-            .unwrap_or_else(|| self.new_clock())
-    }
+        for (id, clock) in self.clocks.iter().enumerate() {
+            if clock.lock() {
+                return ClockGuard::new(id, clock.clone());
+            }
+        }
 
-    /// Create a new clock, lock it, and return a guard.
-    fn new_clock(&mut self) -> ClockGuard {
         let id = self.clocks.len();
-        let clock = Arc::new(Clock::new_unlocked());
+        let clock = Arc::new(Clock::new_locked());
+
         self.clocks.push(clock.clone());
-        clock.try_lock(id).unwrap()
+
+        ClockGuard::new(id, clock)
     }
 }
 
@@ -68,32 +67,27 @@ struct Clock {
 }
 
 impl Clock {
-    pub fn new_unlocked() -> Self {
+    fn new_locked() -> Self {
         Self {
             clock: AtomicU64::new(0),
-            available: AtomicBool::new(true),
+            available: AtomicBool::new(false),
         }
     }
 
-    pub fn tick_once(&self) -> u64 {
+    #[must_use = "new clock value must be used"]
+    fn tick_once(&self) -> u64 {
         self.clock.fetch_add(1, Ordering::Relaxed) + 1
     }
 
-    pub fn advance_to(&self, new_tick: u64) -> u64 {
+    fn advance_to(&self, new_tick: u64) -> u64 {
         let current_tick = self.clock.fetch_max(new_tick, Ordering::Relaxed);
         cmp::max(current_tick, new_tick)
     }
 
-    /// Lock this clock, returning a guard.
-    ///
-    /// Returns `None` if this clock is unavailable.
-    fn try_lock(self: &Arc<Self>, id: usize) -> Option<ClockGuard> {
-        self.available
-            .swap(false, Ordering::Relaxed)
-            .then(|| ClockGuard::new(id, self.clone()))
+    fn lock(&self) -> bool {
+        self.available.swap(false, Ordering::Relaxed)
     }
 
-    /// Release this clock. Should never be invoked manually.
     fn release(&self) {
         self.available.store(true, Ordering::Relaxed);
     }
