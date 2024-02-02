@@ -9,7 +9,9 @@ use itertools::Itertools as _;
 use super::{ReplicaSetState, ReplicaState, ShardReplicaSet};
 use crate::operations::point_ops::WriteOrdering;
 use crate::operations::types::{CollectionError, CollectionResult, UpdateResult};
-use crate::operations::{ClockTag, CollectionUpdateOperations, OperationWithClockTag};
+use crate::operations::{
+    ClockTag, CollectionUpdateOperations, OperationWithClockTag, WithClockTag,
+};
 use crate::shards::shard::PeerId;
 use crate::shards::shard_trait::ShardOperation as _;
 
@@ -155,7 +157,7 @@ impl ShardReplicaSet {
 
         let current_clock_tick = clock.tick_once();
         let clock_tag = ClockTag::new(this_peer_id, clock.id() as _, current_clock_tick);
-        let operation = OperationWithClockTag::new(operation, Some(clock_tag));
+        let operation = operation.with_clock_tag(clock_tag);
 
         let mut update_futures = Vec::with_capacity(active_remote_shards.len() + 1);
 
@@ -402,7 +404,7 @@ impl ShardReplicaSet {
         };
 
         remote_leader
-            .forward_update(OperationWithClockTag::from(operation), wait, ordering) // `clock_tag` *have to* be `None`!
+            .forward_update(operation.without_clock_tag(), wait, ordering) // `clock_tag` *have to* be `None`!
             .await
     }
 }

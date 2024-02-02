@@ -10,7 +10,9 @@ use tokio::sync::RwLock;
 use crate::config::{CollectionConfig, CollectionParams, WalConfig};
 use crate::operations::point_ops::{PointOperations, PointStruct};
 use crate::operations::types::{VectorParams, VectorsConfig};
-use crate::operations::{CollectionUpdateOperations, CreateIndex, FieldIndexOperations};
+use crate::operations::{
+    CollectionUpdateOperations, CreateIndex, FieldIndexOperations, WithClockTag,
+};
 use crate::shards::local_shard::LocalShard;
 use crate::shards::shard_trait::ShardOperation;
 use crate::tests::snapshot_test::TEST_OPTIMIZERS_CONFIG;
@@ -129,14 +131,23 @@ async fn test_delete_from_indexed_payload() {
 
     let upsert_ops = upsert_operation();
 
-    shard.update(upsert_ops.into(), true).await.unwrap();
+    shard
+        .update(upsert_ops.without_clock_tag(), true)
+        .await
+        .unwrap();
 
     let index_op = create_payload_index_operation();
 
-    shard.update(index_op.into(), true).await.unwrap();
+    shard
+        .update(index_op.without_clock_tag(), true)
+        .await
+        .unwrap();
 
     let delete_point_op = delete_point_operation(4);
-    shard.update(delete_point_op.into(), true).await.unwrap();
+    shard
+        .update(delete_point_op.without_clock_tag(), true)
+        .await
+        .unwrap();
 
     let info = shard.info().await.unwrap();
     eprintln!("info = {:#?}", info.payload_schema);
@@ -160,7 +171,10 @@ async fn test_delete_from_indexed_payload() {
 
     eprintln!("dropping point 5");
     let delete_point_op = delete_point_operation(5);
-    shard.update(delete_point_op.into(), true).await.unwrap();
+    shard
+        .update(delete_point_op.without_clock_tag(), true)
+        .await
+        .unwrap();
 
     drop(shard);
 

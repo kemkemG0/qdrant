@@ -30,7 +30,7 @@ use collection::operations::types::{
     QueryEnum, RecommendExample, ScrollRequestInternal,
 };
 use collection::operations::vector_ops::{DeleteVectors, PointVectors, UpdateVectors};
-use collection::operations::{ClockTag, CollectionUpdateOperations, OperationWithClockTag};
+use collection::operations::{ClockTag, CollectionUpdateOperations, WithClockTag};
 use collection::shards::shard::ShardId;
 use segment::types::{
     ExtendedPointId, Filter, PayloadFieldSchema, PayloadSchemaParams, PayloadSchemaType,
@@ -168,7 +168,7 @@ pub async fn sync(
     let result = toc
         .update(
             &collection_name,
-            OperationWithClockTag::new(collection_operation, clock_tag),
+            collection_operation.with_clock_tag_opt(clock_tag),
             wait.unwrap_or(false),
             write_ordering_from_proto(ordering)?,
             shard_selector,

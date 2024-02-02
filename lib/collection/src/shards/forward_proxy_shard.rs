@@ -18,6 +18,7 @@ use crate::operations::types::{
 };
 use crate::operations::{
     CollectionUpdateOperations, CreateIndex, FieldIndexOperations, OperationWithClockTag,
+    WithClockTag,
 };
 use crate::shards::local_shard::LocalShard;
 use crate::shards::remote_shard::RemoteShard;
@@ -59,12 +60,13 @@ impl ForwardProxyShard {
             self.remote_shard
                 .update(
                     // TODO: Assign clock tag!? 🤔
-                    OperationWithClockTag::from(CollectionUpdateOperations::FieldIndexOperation(
+                    CollectionUpdateOperations::FieldIndexOperation(
                         FieldIndexOperations::CreateIndex(CreateIndex {
                             field_name: index_key,
                             field_schema: Some(index_type.try_into()?),
                         }),
-                    )),
+                    )
+                    .without_clock_tag(),
                     false,
                 )
                 .await?;
@@ -127,7 +129,7 @@ impl ForwardProxyShard {
 
         // TODO: Is cancelling `RemoteShard::update` safe for *receiver*?
         self.remote_shard
-            .update(OperationWithClockTag::from(insert_points_operation), wait) // TODO: Assign clock tag!? 🤔
+            .update(insert_points_operation.without_clock_tag(), wait) // TODO: Assign clock tag!? 🤔
             .await?;
 
         Ok(next_page_offset)
