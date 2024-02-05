@@ -143,7 +143,7 @@ impl ShardOperation for LocalShard {
                     return Ok(UpdateResult {
                         operation_id: None,
                         status: UpdateStatus::Acknowledged,
-                        clock_tag: Some(clock_tag.clone()),
+                        clock_tag: Some(*clock_tag),
                     });
                 }
             }
