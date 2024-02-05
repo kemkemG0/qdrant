@@ -133,10 +133,19 @@ impl ShardOperation for LocalShard {
             // TODO: We better lock `wal` before `clock_map`, but it does not work, because `wal` use `parking_lot::Mutex`... :/
 
             if let Some(clock_tag) = &mut operation.clock_tag {
-                self.clock_map
+                let prev_tick = self
+                    .clock_map
                     .lock()
                     .await
                     .advance_clock_and_correct_tag(clock_tag);
+
+                if clock_tag.clock_tick <= prev_tick && clock_tag.clock_tick > 0 {
+                    return Ok(UpdateResult {
+                        operation_id: None,
+                        status: UpdateStatus::Acknowledged,
+                        clock_tag: Some(clock_tag.clone()),
+                    });
+                }
             }
 
             let mut wal_lock = self.wal.lock();
