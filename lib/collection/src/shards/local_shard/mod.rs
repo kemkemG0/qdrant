@@ -297,7 +297,7 @@ impl LocalShard {
         )
         .await;
 
-        collection.load_from_wal(collection_id)?;
+        collection.load_from_wal(collection_id).await?;
 
         let available_memory_bytes = Mem::new().available_memory_bytes() as usize;
         let vectors_size_bytes = collection.estimate_vector_data_size().await;
@@ -475,7 +475,8 @@ impl LocalShard {
     }
 
     /// Loads latest collection operations from WAL
-    pub fn load_from_wal(&self, collection_id: CollectionId) -> CollectionResult<()> {
+    pub async fn load_from_wal(&self, collection_id: CollectionId) -> CollectionResult<()> {
+        let mut clock_map = self.clock_map.lock().await;
         let wal = self.wal.lock();
         let bar = ProgressBar::new(wal.len());
 
@@ -509,8 +510,6 @@ impl LocalShard {
         // Note, that it's not guaranteed that some operation won't be re-applied to the storage.
         // (`SerdeWal::read_all` may even start reading WAL from some already truncated
         // index *occasionally*), but the storage can handle it.
-
-        let mut clock_map = self.clock_map.blocking_lock();
 
         for (op_num, update) in wal.read_all() {
             if let Some(clock_tag) = &update.clock_tag {
