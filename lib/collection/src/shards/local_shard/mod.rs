@@ -693,7 +693,7 @@ impl LocalShard {
         let clock_map_path = Self::clock_map_path(&self.path);
 
         if clock_map_path.exists() {
-            let target_clock_map_path = Self::clock_map_path(&snapshot_shard_path);
+            let target_clock_map_path = Self::clock_map_path(snapshot_shard_path);
             copy(clock_map_path, target_clock_map_path).await?;
         }
 
