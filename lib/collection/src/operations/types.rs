@@ -7,6 +7,7 @@ use std::num::NonZeroU64;
 use std::time::SystemTimeError;
 
 use api::grpc::transport_channel_pool::RequestError;
+use chrono::{DateTime, Utc};
 use common::types::ScoreType;
 use common::validation::validate_range_generic;
 use io::file_operations::FileStorageError;
@@ -213,6 +214,13 @@ pub struct ShardTransferInfo {
     pub sync: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub method: Option<ShardTransferMethod>,
+
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub started_at: Option<DateTime<Utc>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub records_done: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub records_total: Option<usize>,
 }
 
 #[derive(Debug, Deserialize, Serialize, JsonSchema)]

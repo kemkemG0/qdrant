@@ -12,6 +12,7 @@ use tokio::runtime::Handle;
 use tokio::sync::RwLock;
 
 use super::replica_set::AbortShardTransfer;
+use super::transfer::transfer_tasks_pool::TransferTasksPool;
 use crate::common::file_utils::move_file;
 use crate::common::sha_256::hash_file;
 use crate::config::{CollectionConfig, ShardingMethod};
@@ -298,7 +299,10 @@ impl ShardHolder {
         (incoming, outgoing)
     }
 
-    pub fn get_shard_transfer_info(&self) -> Vec<ShardTransferInfo> {
+    pub fn get_shard_transfer_info(
+        &self,
+        tasks_pool: &TransferTasksPool,
+    ) -> Vec<ShardTransferInfo> {
         let mut shard_transfers = vec![];
         for shard_transfer in self.shard_transfers.read().iter() {
             let shard_id = shard_transfer.shard_id;
@@ -306,12 +310,18 @@ impl ShardHolder {
             let from = shard_transfer.from;
             let sync = shard_transfer.sync;
             let method = shard_transfer.method;
+
+            let progress = tasks_pool.get_task_progress(&shard_transfer.key());
+
             shard_transfers.push(ShardTransferInfo {
                 shard_id,
                 from,
                 to,
                 sync,
                 method,
+                started_at: None, // TODO
+                records_done: progress.as_ref().map(|p| p.records_done),
+                records_total: progress.as_ref().map(|p| p.records_total),
             })
         }
         shard_transfers.sort_by_key(|k| k.shard_id);

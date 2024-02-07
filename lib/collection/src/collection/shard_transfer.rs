@@ -1,8 +1,10 @@
 use std::future::Future;
 use std::path::PathBuf;
+use std::sync::Arc;
 use std::time::Duration;
 
 use common::defaults;
+use parking_lot::Mutex;
 
 use super::Collection;
 use crate::operations::types::{CollectionError, CollectionResult};
@@ -11,7 +13,9 @@ use crate::shards::replica_set::ReplicaState;
 use crate::shards::shard::{PeerId, ShardId};
 use crate::shards::shard_holder::ShardHolder;
 use crate::shards::transfer;
-use crate::shards::transfer::transfer_tasks_pool::TaskResult;
+use crate::shards::transfer::transfer_tasks_pool::{
+    TaskResult, TransferTaskItem, TransferTaskProgress,
+};
 use crate::shards::transfer::{
     ShardTransfer, ShardTransferConsensus, ShardTransferKey, ShardTransferMethod,
 };
@@ -134,8 +138,11 @@ impl Collection {
         let collection_id = self.id.clone();
         let channel_service = self.channel_service.clone();
 
+        let progress = Arc::new(Mutex::new(TransferTaskProgress::default()));
+
         let transfer_task = transfer::driver::spawn_transfer_task(
             shard_holder,
+            progress.clone(),
             transfer.clone(),
             consensus,
             collection_id,
@@ -147,7 +154,13 @@ impl Collection {
             on_error,
         );
 
-        active_transfer_tasks.add_task(&transfer, transfer_task);
+        active_transfer_tasks.add_task(
+            &transfer,
+            TransferTaskItem {
+                task: transfer_task,
+                progress,
+            },
+        );
     }
 
     /// Handles finishing of the shard transfer.

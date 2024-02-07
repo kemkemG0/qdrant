@@ -8608,6 +8608,23 @@
                 "nullable": true
               }
             ]
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "records_done": {
+            "type": "integer",
+            "format": "uint",
+            "minimum": 0,
+            "nullable": true
+          },
+          "records_total": {
+            "type": "integer",
+            "format": "uint",
+            "minimum": 0,
+            "nullable": true
           }
         }
       },

@@ -592,7 +592,10 @@ impl Collection {
             for shard in shards_holder.all_shards() {
                 shards_telemetry.push(shard.get_telemetry_data().await)
             }
-            (shards_telemetry, shards_holder.get_shard_transfer_info())
+            (
+                shards_telemetry,
+                shards_holder.get_shard_transfer_info(&*self.transfer_tasks.lock().await),
+            )
         };
 
         CollectionTelemetry {

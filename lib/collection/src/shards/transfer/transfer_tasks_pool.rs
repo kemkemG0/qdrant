@@ -1,4 +1,7 @@
 use std::collections::HashMap;
+use std::sync::Arc;
+
+use parking_lot::Mutex;
 
 use crate::common::stoppable_task_async::CancellableAsyncTaskHandle;
 use crate::shards::transfer::{ShardTransfer, ShardTransferKey};
@@ -6,7 +9,18 @@ use crate::shards::CollectionId;
 
 pub struct TransferTasksPool {
     collection_id: CollectionId,
-    tasks: HashMap<ShardTransferKey, CancellableAsyncTaskHandle<bool>>,
+    tasks: HashMap<ShardTransferKey, TransferTaskItem>,
+}
+
+pub struct TransferTaskItem {
+    pub task: CancellableAsyncTaskHandle<bool>,
+    pub progress: Arc<Mutex<TransferTaskProgress>>,
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct TransferTaskProgress {
+    pub records_done: usize,
+    pub records_total: usize,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -33,29 +47,34 @@ impl TransferTasksPool {
 
     /// Returns true if transfer task is still running
     pub fn check_if_still_running(&self, transfer_key: &ShardTransferKey) -> bool {
-        if let Some(task) = self.tasks.get(transfer_key) {
-            !task.is_finished()
-        } else {
-            false
-        }
+        self.tasks
+            .get(transfer_key)
+            .map_or(false, |task| !task.task.is_finished())
     }
 
     /// Return true if task finished
     /// Return false if task failed or stopped
     /// Return None if task not found or not finished
     pub fn get_task_result(&self, transfer_key: &ShardTransferKey) -> Option<bool> {
-        if let Some(task) = self.tasks.get(transfer_key) {
-            task.get_result()
-        } else {
-            None
-        }
+        self.tasks
+            .get(transfer_key)
+            .and_then(|task| task.task.get_result())
+    }
+
+    pub fn get_task_progress(
+        &self,
+        transfer_key: &ShardTransferKey,
+    ) -> Option<TransferTaskProgress> {
+        self.tasks
+            .get(transfer_key)
+            .map(|task| *task.progress.lock())
     }
 
     /// Returns true if the task was actually stopped
     /// Returns false if the task was not found
     pub async fn stop_if_exists(&mut self, transfer_key: &ShardTransferKey) -> TaskResult {
         if let Some(task) = self.tasks.remove(transfer_key) {
-            match task.cancel().await {
+            match task.task.cancel().await {
                 Ok(res) => {
                     if res {
                         log::info!(
@@ -91,11 +110,7 @@ impl TransferTasksPool {
         }
     }
 
-    pub fn add_task(
-        &mut self,
-        shard_transfer: &ShardTransfer,
-        task: CancellableAsyncTaskHandle<bool>,
-    ) {
-        self.tasks.insert(shard_transfer.key(), task);
+    pub fn add_task(&mut self, shard_transfer: &ShardTransfer, item: TransferTaskItem) {
+        self.tasks.insert(shard_transfer.key(), item);
     }
 }
