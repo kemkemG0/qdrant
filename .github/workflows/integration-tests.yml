@@ -239,12 +239,13 @@ jobs:
     # Setup minio server
     services:
       minio:
-        image: wktk/minio-server
+        image: quay.io/minio/minio
         ports:
           - 9000:9000
         env:
           MINIO_ACCESS_KEY: "minioadmin"
           MINIO_SECRET_KEY: "minioadmin"
+        options: server /data
 
     steps:
       - name: Setup test bucket

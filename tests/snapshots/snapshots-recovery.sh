@@ -114,11 +114,6 @@ curl -X PUT "http://${QDRANT_HOST}/collections/test_collection_recovered_1/snaps
      -H 'Content-Type: application/json' \
      --fail -s -d "{\"location\": \"${SNAPSHOT_URL}\"}" | jq
 
-###### echo disk usage of the docker #######
-docker exec ${CONTAINER_NAME} dh -h
-docker exec ${CONTAINER_NAME} ls -la /qdrant/tempdir/tmp
-docker exec ${CONTAINER_NAME} du -h /qdrant/tempdir/tmp
-##############################
 # Upload snapshot as file
 curl -X POST "http://${QDRANT_HOST}/collections/test_collection_recovered_2/snapshots/upload" \
      -H 'Content-Type:multipart/form-data' \
