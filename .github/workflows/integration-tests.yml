@@ -239,13 +239,12 @@ jobs:
     # Setup minio server
     services:
       minio:
-        image: minio/minio
+        image: satantime/minio-server
         ports:
           - 9000:9000
         env:
           MINIO_ACCESS_KEY: "minioadmin"
           MINIO_SECRET_KEY: "minioadmin"
-        options: server /data
 
     steps:
       - name: Setup test bucket
