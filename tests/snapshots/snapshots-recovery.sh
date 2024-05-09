@@ -45,6 +45,7 @@ docker run \
     -v storage:/qdrant/storage \
     -e QDRANT__STORAGE__TEMP_PATH=/qdrant/tempdir \
     --name ${CONTAINER_NAME} \
+    --ulimit nofile=10000:10000 \
     $DOCKER_IMAGE_NAME
 
 
